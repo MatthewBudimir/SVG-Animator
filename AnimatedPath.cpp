@@ -26,7 +26,6 @@ Coords addCoords(Coords a,Coords b){
     return out;
 }
 // Render paths using all the paths you've found.
-// ADD SMOOTHNESS TO BRUSH.
 AnimatedPath::AnimatedPath(std::string svg, std::string brushName, int animationLength, 
  int w,int h, int xPos, int yPos, SDL_Renderer * rend){
 
@@ -64,7 +63,6 @@ AnimatedPath::AnimatedPath(std::string svg, std::string brushName, int animation
     Coords fourth;
     Coords result;
     // before we can make textures we need to make surfaces. Before we make surfaces we need to make our animations
-    // std::vector<Texture*> frames
     for(int i = 0; i<animationLength;i++)
     {
         frames.push_back(NULL);
@@ -122,32 +120,8 @@ AnimatedPath::AnimatedPath(std::string svg, std::string brushName, int animation
         // SDL_SetTextureColorMod(brush,255,255,255);
         SDL_SetTextureColorMod(brush,protopaths[pathNum].colour[0],protopaths[pathNum].colour[1],protopaths[pathNum].colour[2]);
         
-        // Calculate and use the positions 
-        // for(int segment=0; segment<protopaths[pathNum].points.size()-1;segment++)
-        // {
-        //     for(double t=0; t<1; t+=step){
-        //         scale1= pow(1-t,3);
-        //         // scale1= 1;
-        //         scale2= 3*pow(1-t,2)*t;
-        //         scale3= 3*(1-t)*pow(t,2);
-        //         scale4= pow(t,3);
-        //         // // calculate scaled components
-        //         first = scalarMult(protopaths[pathNum].points[segment],scale1);
-        //         second = scalarMult(protopaths[pathNum].out[segment],scale2);
-        //         third = scalarMult(protopaths[pathNum].in[segment+1],scale3);
-        //         fourth = scalarMult(protopaths[pathNum].points[segment+1],scale4);
-        //         // sum together components
-        //         result = addCoords(first,second);
-        //         result = addCoords(result,third);
-        //         result = addCoords(result,fourth);
-        //         // // store the result
-        //         positions.push_back(result);
-        //     }
-        // }
-        // Use positions to generate frames.
+        //Snapshot frequency is how many frames we skip before we save one to our animation
         int snapshotFrequency = positions[pathNum].size()/pathAnimationLength;
-        //Now, using those positions stamp the brush onto an image and copy the image into your final animation vector periodically.
-        // if we have 30 frames, and 300 position, we should be saving every 10 positions.
         
         SDL_Rect rect;
         rect.w=100;
@@ -171,15 +145,12 @@ AnimatedPath::AnimatedPath(std::string svg, std::string brushName, int animation
                 SDL_RenderCopy(renderer, canvas, NULL,NULL);
                 // Make the canvas the render taget again.
                 SDL_SetRenderTarget(renderer, canvas);
-                // SDL_BlitSurface(canvas,NULL,snapshot,NULL);
                 // Store the snapshot
                 frames[paintCount] = snapshot;
                 paintCount++;
             }
         }
         std::cout << "PaintCount: " << paintCount << std::endl;
-        // std::cout << paintCount << std::endl;
-        // std::cout << animationLength << std::endl;
         // Fill in remaining frames that come from division error.
         snapshot =SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
         // Set the snapshot as the render target.
@@ -203,20 +174,16 @@ AnimatedPath::AnimatedPath(std::string svg, std::string brushName, int animation
                 paintCount++;
             }
         }
-        // positions.clear();
     }
     // We're done creating frames
     
     if(frames.size()==0){
-        // std::cout << "No frames" << std::endl;
+        std::cout << "No frames" << std::endl;
         exit(0);
     }
     std::cout << "we have: " << frames.size() << " frames" << std::endl;
     std::cout << "Drawing " << protopaths.size() << " paths" << std::endl; 
-    // FREE MEMORY AND CLEANUP
-    // brush
-    // canvas
-    // etc.
+
     SDL_SetRenderTarget(renderer, NULL);
 }
 
@@ -234,8 +201,6 @@ void AnimatedPath::loadPaths(std::string fileName) {
     bool readingPath = false;
     // Split paths into string.
     while(getline(vectorFile,buffer)){
-        // std::cout<< "ding" <<std::endl;
-        // std::cout << buffer << std::endl;
         if(readingPath)
         {
             path+= buffer;
@@ -253,7 +218,6 @@ void AnimatedPath::loadPaths(std::string fileName) {
             }
         }
     }
-    // std::string rawInput = "<path fill=\"none\" stroke=\"#5B8B3B\" stroke-miterlimit=\"10\" d=\"M438.415,361.343c0,0,12.667-45,49.667-37s89.666,15.667,63.333,69.667s-34.667,64.611-25,105.806s45.667,113.193-8,136.527c-26.833,11.667-62.167,22.25-93.334,22.042s-58.167-11.208-68.333-42.708c-20.333-63-32-118.774-9.333-141.554C370.082,451.343,423.415,405.009,438.415,361.343z\"/>";
     std::size_t index;
     std::string colour;
     std::string data;
@@ -265,8 +229,6 @@ void AnimatedPath::loadPaths(std::string fileName) {
         // get the colour substring.
         index = rawInput.find('#');
         colour = rawInput.substr(index+1,6);
-        // std::cout <<"Colour:"<< colour << std::endl;// protoPath.colour = colour;
-        
         // Get the coordinate list
         index = rawInput.find("d=");
         data = rawInput.substr(index+4); // skip `d= "M`
@@ -572,202 +534,6 @@ void AnimatedPath::normalizePaths(int w,int h, std::vector<std::vector <Coords> 
             points[i][j].y = points[i][j].y*(double(h)/(maxY+1));
         }
     }
-
-    // // Convert all coordinates to w, h, with 0,0 as the top leftmost coordiante.
-    // if(protopaths.size()<1){
-    //     return;
-    // }
-    // else if(protopaths[0].points.size()<1){
-    //     return;
-    // }
-    // double minX = protopaths[0].points[0].x;
-    // double minY = protopaths[0].points[0].y;
-    // double maxX = protopaths[0].points[0].x;
-    // double maxY = protopaths[0].points[0].y;
-    // double target;
-    // // Step 1: Find Smallest x, smallest y, largest x, largest y.
-    // for(int i =0; i<protopaths.size();i++){
-    //     for(int j = 0; j<protopaths[i].in.size();j++)
-    //     {
-    //         // Compare in.x to min and max
-    //         protopaths[i].in[j].x = target;
-    //         if(target<minX){
-    //             minX = target;
-    //         }
-    //         if(target>maxX){
-    //             maxX = target;
-    //         }
-    //         // compare in.y to min and max
-    //         protopaths[i].in[j].y = target;
-    //         if(target<minY){
-    //             minX = target;
-    //         }
-    //         if(target>maxY){
-    //             maxX = target;
-    //         }
-    //     }
-    //     for(int j = 0; j<protopaths[i].out.size();j++)
-    //     {
-    //         // Compare out.x to min and max
-    //         protopaths[i].out[j].x = target;
-    //         if(target<minX){
-    //             minX = target;
-    //         }
-    //         if(target>maxX){
-    //             maxX = target;
-    //         }
-    //         // compare out.y to min and max
-    //         protopaths[i].out[j].y = target;
-    //         if(target<minY){
-    //             minX = target;
-    //         }
-    //         if(target>maxY){
-    //             maxX = target;
-    //         }
-    //     }
-    //     for(int j = 0; j<protopaths[i].points.size();j++)
-    //     {
-    //         // Compare points.x to min and max
-    //         protopaths[i].points[j].x = target;
-    //         if(target<minX){
-    //             minX = target;
-    //         }
-    //         if(target>maxX){
-    //             maxX = target;
-    //         }
-    //         // compare points.y to min and max
-    //         protopaths[i].points[j].y = target;
-    //         if(target<minY){
-    //             minX = target;
-    //         }
-    //         if(target>maxY){
-    //             maxX = target;
-    //         }
-    //     }
-    // }
-    // std::cout << "minX:" << minX << std::endl;
-    // std::cout << "minY:" << minY << std::endl;
-    // std::cout << "maxX:" << maxX << std::endl;
-    // std::cout << "maxY:" << maxY << std::endl;
-    // // ##################  Step 2: Shift everything by the min. ##########################
-    // for(int i =0; i<protopaths.size();i++){
-    //     for(int j = 0; j<protopaths[i].in.size();j++)
-    //     {
-    //         //shift x by min
-    //         protopaths[i].in[j].x -= minX;
-    //         //shift y by min
-    //         protopaths[i].in[j].y -= minY;
-    //     }
-    //     for(int j = 0; j<protopaths[i].out.size();j++)
-    //     {
-    //         //shift x by min
-    //         protopaths[i].out[j].x -= minX;
-    //         //shift y by min
-    //         protopaths[i].out[j].y -= minY;
-    //     }
-    //     for(int j = 0; j<protopaths[i].points.size();j++)
-    //     {
-    //         //shift x by min
-    //         protopaths[i].points[j].x -= minX;
-    //         //shift y by min
-    //         protopaths[i].points[j].y -= minY; 
-    //     }
-    // }
-    // // ##########  Step 3: Scale by max to fit within bounds defined by h and w. ###################
-    // for(int i =0; i<protopaths.size();i++){
-    //     for(int j = 0; j<protopaths[i].in.size();j++)
-    //     {
-    //         //Scale by width
-    //         protopaths[i].in[j].x *= w;
-    //         protopaths[i].in[j].x /= maxX;
-    //         //Scale by height
-    //         protopaths[i].in[j].y *= h;
-    //         protopaths[i].in[j].y /= maxY;
-    //     }
-    //     for(int j = 0; j<protopaths[i].out.size();j++)
-    //     {
-    //         //Scale by width
-    //         protopaths[i].out[j].x *= w;
-    //         protopaths[i].out[j].x /= maxX;
-    //         //Scale by height
-    //         protopaths[i].out[j].y *= h;
-    //         protopaths[i].out[j].y /= maxY;
-    //     }
-    //     for(int j = 0; j<protopaths[i].points.size();j++)
-    //     {
-    //         //Scale by width
-    //         protopaths[i].points[j].x *= w;
-    //         protopaths[i].points[j].x /= maxX;
-    //         //Scale by height
-    //         protopaths[i].points[j].y *= h;
-    //         protopaths[i].points[j].y /= maxY;
-    //     }
-    // }
-
-    // // FINAL STEP: FIND NEW MIN AND NEW MAX (FOR CHECKING)
-    // minX = protopaths[0].points[0].x;
-    // minY = protopaths[0].points[0].y;
-    // maxX = protopaths[0].points[0].x;
-    // maxY = protopaths[0].points[0].y;
-    // for(int i =0; i<protopaths.size();i++){
-    //     for(int j = 0; j<protopaths[i].in.size();j++)
-    //     {
-    //         // Compare in.x to min and max
-    //         protopaths[i].in[j].x = target;
-    //         if(target<minX){
-    //             minX = target;
-    //         }
-    //         if(target>maxX){
-    //             maxX = target;
-    //         }
-    //         // compare in.y to min and max
-    //         protopaths[i].in[j].y = target;
-    //         if(target<minY){
-    //             minX = target;
-    //         }
-    //         if(target>maxY){
-    //             maxX = target;
-    //         }
-    //     }
-    //     for(int j = 0; j<protopaths[i].out.size();j++)
-    //     {
-    //         // Compare out.x to min and max
-    //         protopaths[i].out[j].x = target;
-    //         if(target<minX){
-    //             minX = target;
-    //         }
-    //         if(target>maxX){
-    //             maxX = target;
-    //         }
-    //         // compare out.y to min and max
-    //         protopaths[i].out[j].y = target;
-    //         if(target<minY){
-    //             minX = target;
-    //         }
-    //         if(target>maxY){
-    //             maxX = target;
-    //         }
-    //     }
-    //     for(int j = 0; j<protopaths[i].points.size();j++)
-    //     {
-    //         // Compare points.x to min and max
-    //         protopaths[i].points[j].x = target;
-    //         if(target<minX){
-    //             minX = target;
-    //         }
-    //         if(target>maxX){
-    //             maxX = target;
-    //         }
-    //         // compare points.y to min and max
-    //         protopaths[i].points[j].y = target;
-    //         if(target<minY){
-    //             minX = target;
-    //         }
-    //         if(target>maxY){
-    //             maxX = target;
-    //         }
-    //     }
-    // }
     minX = points[0][0].x;
     minY = points[0][0].y;
     maxX = points[0][0].x;
@@ -805,7 +571,6 @@ void AnimatedPath::normalizePaths(int w,int h, std::vector<std::vector <Coords> 
 bool AnimatedPath::render(){
     // Render the relevant animation of the frame and increment the 
     bool res = SDL_RenderCopy( renderer, frames[frameIndex], NULL, &dstRect ) > 0;
-    // std::cout << "Rendering frame " << frameIndex<< std::endl;
     if(frameIndex < frames.size()-1){
         //hang on the last frame.
         frameIndex++;
