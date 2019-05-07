@@ -11,6 +11,5 @@ Developed on windows using MinGW32.
 3) Have a stretch as points are calculated.
 4) Enjoy the show.
 
-Demo Video:
-
+## Demo Video
 https://youtu.be/CMIrFZM6S-o
